@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DS計算機 Pro</title>
+
+<style>
+    :root {
+        --primary-color: #007bff;
+        --bg-color: #f8f9fa;
+        --row-bg: #ffffff;
+    }
+
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        padding: 0; 
+        margin: 0; 
+        background-color: var(--bg-color);
+        padding-bottom: 180px; /* Space for sticky footer */
+    }
+
+    h2 { text-align: center; padding: 10px; margin: 0; background: #fff; border-bottom: 1px solid #ddd; font-size: 1.2rem; }
+
+    /* Filing System (Tabs) */
+    .tabs {
+        display: flex;
+        background: #eee;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .tab-btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        background: #ddd;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+    }
+    .tab-btn.active {
+        background: #fff;
+        border-bottom: 3px solid var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Table Styling */
+    table { width: 100%; border-collapse: collapse; background: var(--row-bg); }
+    th { background: #f4f4f4; padding: 10px; font-size: 0.8rem; }
+    td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: center; }
+
+    /* Input Styling */
+    .qty-container { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    
+    input[type=tel] {
+        width: 45px;
+        height: 35px;
+        text-align: center;
+        font-size: 18px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    .btn-qty {
+        width: 35px;
+        height: 35px;
+        border: none;
+        background: #e0e0e0;
+        border-radius: 4px;
+        font-size: 20px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-plus5 {
+        padding: 0 8px;
+        height: 35px;
+        background: #d1ecf1;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    /* Sticky Footer */
+    .footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background: #343a40;
+        color: white;
+        padding: 15px;
+        box-sizing: border-box;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    }
+
+    .footer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .footer-row span { font-size: 0.9rem; }
+    .footer-row .price-val { font-size: 1.2rem; font-weight: bold; color: #ffc107; }
+
+    .calc-half-btn {
+        width: 100%;
+        padding: 12px;
+        background: #28a745;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        font-size: 1rem;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    #half-result-box {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px dashed #666;
+        color: #58d68d;
+        text-align: center;
+        font-weight: bold;
+        display: none;
+    }
+
+    .item-name { text-align: left; font-size: 0.9rem; font-weight: bold; width: 30%; }
+</style>
+</head>
+
+<body>
+
+<h2>DS計算機</h2>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="openTab(event, 'standard')">通常メニュー</button>
+    <button class="tab-btn" onclick="openTab(event, 'special')">ボトル・SP</button>
+</div>
+
+<!-- TAB 1: STANDARD -->
+<div id="standard" class="tab-content active">
+    <table>
+        <tbody class="menu-body">
+            <!-- Items added via JS for cleaner code -->
+        </tbody>
+    </table>
+</div>
+
+<!-- TAB 2: SPECIAL -->
+<div id="special" class="tab-content">
+    <table>
+        <tbody class="menu-body">
+            <!-- Special Items added via JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- STICKY FOOTER -->
+<div class="footer">
+    <div class="footer-row">
+        <span>合計 (小計):</span>
+        <span class="price-val"><span id="total-price">0</span> 円</span>
+    </div>
+    <div class="footer-row">
+        <span>税込 (x1.375):</span>
+        <span class="price-val"><span id="total-tax">0</span> 円</span>
+    </div>
+    
+    <button class="calc-half-btn" onclick="calcHalf()">÷2 してから計算 (折半)</button>
+    
+    <div id="half-result-box">
+        折半後税込: <span id="half-tax">0</span> 円
+    </div>
+</div>
+
+<script>
+// Data structure to handle the two "files"
+const standardItems = [
+    {n:"セット", p:5000, q:1}, {n:"指名料", p:3000, q:1}, {n:"同伴", p:3000, q:0}, {n:"場内", p:2000, q:0},
+    {n:"セクシーM", p:2000, q:0}, {n:"チャージ", p:2000, q:0}, {n:"シャルドネ", p:1500, q:0}, {n:"氷結Ｌ", p:1500, q:0},
+    {n:"氷結ＧＦ", p:1500, q:0}, {n:"淡麗", p:1000, q:0}, {n:"グラス", p:500, q:0}, {n:"デキャンタ", p:1500, q:0},
+    {n:"カルピス・ネクターデキャンタ", p:2000, q:0}, {n:"青汁", p:1000, q:0}, {n:"エナジー", p:1500, q:0},
+    {n:"梅こぶ", p:1000, q:0}, {n:"鏡月", p:4000, q:0}, {n:"生ビール", p:1000, q:0}, {n:"カクテル", p:2000, q:0},
+    {n:"クライナー", p:2000, q:0}, {n:"テキーラ", p:3000, q:0}, {n:"ローズ", p:2000, q:0}, {n:"1800", p:4000, q:0},
+    {n:"コカボム", p:3000, q:0}
+];
+
+const specialItems = [
+    {n:"観覧車", p:70000, q:0}, {n:"シップ", p:150000, q:0}, {n:"地球儀", p:100000, q:0},
+    {n:"アスティ", p:26000, q:0}, {n:"アスティS", p:14000, q:0}, {n:"ピエール", p:26000, q:0},
+    {n:"ピエールS", p:14000, q:0}, {n:"BJW", p:50000, q:0}, {n:"BJW S", p:25000, q:0},
+    {n:"BJB", p:70000, q:0}, {n:"BJB S", p:35000, q:0}, {n:"BJR", p:100000, q:0},
+    {n:"BJR S", p:50000, q:0}, {n:"BJG", p:150000, q:0}, {n:"BJPB", p:200000, q:0},
+    {n:"BJPR", p:250000, q:0}, {n:"BJPG", p:350000, q:0}, {n:"BJEX", p:500000, q:0}
+];
+
+// Items that NEVER get divided by 2
+const noHalfNames = ['指名料', '同伴', '場内', 'セクシーM', 'アスティS', 'ピエールS', 'BJW S', 'BJB S', 'BJR S', 'BJG', 'BJPB', 'BJPR', 'BJPG', 'BJEX', '観覧車', 'シップ', '地球儀'];
+const customHalfPrices = { 'アスティ': 14000, 'ピエール': 14000 };
+
+function renderTable(items, targetSelector) {
+    const container = document.querySelector(targetSelector);
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="item-name">${item.n}</td>
+            <td class="item-price" data-price="${item.p}">${item.p.toLocaleString()}</td>
+            <td>
+                <div class="qty-container">
+                    <button class="btn-qty" onclick="changeQty(this, -1)">-</button>
+                    <input type="tel" class="quantity" value="${item.q}" oninput="updateTotals()">
+                    <button class="btn-qty" onclick="changeQty(this, 1)">+</button>
+                    <button class="btn-plus5" onclick="changeQty(this, 5)">+5</button>
+                </div>
+            </td>
+        `;
+        container.appendChild(tr);
+    });
+}
+
+function openTab(evt, tabName) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+}
+
+function changeQty(btn, delta) {
+    const input = btn.parentNode.querySelector('.quantity');
+    let val = parseInt(input.value) || 0;
+    input.value = Math.max(0, val + delta);
+    updateTotals();
+}
+
+function updateTotals() {
+    let total = 0;
+    document.querySelectorAll('tr').forEach(row => {
+        const priceEl = row.querySelector('.item-price');
+        const qtyEl = row.querySelector('.quantity');
+        if (priceEl && qtyEl) {
+            const price = parseInt(priceEl.dataset.price);
+            const qty = parseInt(qtyEl.value) || 0;
+            total += (price * qty);
+        }
+    });
+
+    document.getElementById('total-price').textContent = total.toLocaleString();
+    
+    // Tax calculation (x1.375) truncated to 100 yen
+    let taxed = Math.floor(total * 1.375);
+    taxed = Math.floor(taxed / 100) * 100;
+    document.getElementById('total-tax').textContent = taxed.toLocaleString();
+    
+    // Hide half result if totals change
+    document.getElementById('half-result-box').style.display = 'none';
+}
+
+function calcHalf() {
+    let adjustedSum = 0;
+    document.querySelectorAll('tr').forEach(row => {
+        const nameEl = row.querySelector('.item-name');
+        const priceEl = row.querySelector('.item-price');
+        const qtyEl = row.querySelector('.quantity');
+        
+        if (!nameEl) return;
+
+        const name = nameEl.textContent.trim();
+        const price = parseInt(priceEl.dataset.price);
+        const qty = parseInt(qtyEl.value) || 0;
+        const subtotal = price * qty;
+
+        if (qty === 0) return;
+
+        if (noHalfNames.includes(name)) {
+            adjustedSum += subtotal;
+        } else if (customHalfPrices[name]) {
+            adjustedSum += (customHalfPrices[name] * qty);
+        } else {
+            adjustedSum += (subtotal / 2);
+        }
+    });
+
+    let result = Math.floor(adjustedSum * 1.375);
+    result = Math.floor(result / 100) * 100;
+
+    document.getElementById('half-tax').textContent = result.toLocaleString();
+    document.getElementById('half-result-box').style.display = 'block';
+}
+
+// Initialize
+renderTable(standardItems, '#standard .menu-body');
+renderTable(specialItems, '#special .menu-body');
+updateTotals();
+
+</script>
+</body>
+</html>
